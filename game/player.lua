@@ -3,8 +3,6 @@ local player = {
     army = {}
 }
 
-
-
 function player.getClass()
     return player.class
 end
@@ -32,6 +30,47 @@ end
 
 function player.getArmy()
     return player.army
+end
+
+function player.addUnit(unit)
+    table.insert(player.army, unit)
+end
+
+function player.clearArmy()
+    player.army = {}
+end
+
+player.money = 0
+
+function player.getMoney()
+    return player.money
+end
+
+function player.addMoney(amount)
+    player.money = player.money + amount
+end
+
+function player.spendMoney(amount)
+    if player.money >= amount then
+        player.money = player.money - amount
+        return true
+    else
+        return false
+    end
+end
+
+player.round = 1
+
+function player.getRound()
+    return player.round
+end
+
+function player.nextRound()
+    player.round = player.round + 1
+end
+
+function player.resetRound()
+    player.round = 1
 end
 
 return player

@@ -6,7 +6,7 @@ local loadout = require("game.loadout")
 local battle = require("game.battle")
 local settings = require("game.settings")
 local endscreen = require("game.endscreen")
-
+local shop = require("game.shop")
 
 function state.load()
     menu.load()
@@ -27,6 +27,9 @@ function state.update(dt)
         battle.update(dt)
     elseif current == "end" then
         endscreen.update(dt)
+    elseif current == "shop" then
+        shop.update(dt)
+
     end
 end
 
@@ -41,6 +44,8 @@ function state.draw()
         battle.draw()
     elseif current == "end" then
         endscreen.draw()
+    elseif current == "shop" then
+        shop.draw()
     end
 end
 
@@ -59,6 +64,8 @@ function state.keypressed(key)
         if endscreen.keypressed then
             endscreen.keypressed(key)
         end
+    elseif current == "shop" then
+        shop.keypressed(key)
     end
 end
 

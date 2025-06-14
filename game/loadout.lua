@@ -1,33 +1,67 @@
 local loadout = {}
-local classes = { "Blacksmith", "Gunsmith" }
-local selected = 1
+
+local items = require("game.items")
+local player = require("game.player")
+
+local currentUnit = 1
+local selecting = "weapon" -- lub "addon"
+local selectedWeapon = 1
+local selectedAddon = 1
 
 function loadout.load()
+    player.clearArmy()
+    for i = 1, 3 do
+        player.addUnit({
+            type = "Swordsman", -- domyślna
+            weapon = items.weapons[1],
+            addon = items.addons[1]
+        })
+    end
 end
 
 function loadout.update(dt)
 end
 
 function loadout.draw()
-    love.graphics.print("Select Your Class:", 100, 100)
-    for i, class in ipairs(classes) do
-        local prefix = (i == selected) and "> " or "  "
-        love.graphics.print(prefix .. class, 120, 100 + i * 30)
+    love.graphics.print("Prepare Your Army", 100, 50)
+
+    local army = player.getArmy()
+
+    for i, unit in ipairs(army) do
+        local y = 100 + i * 60
+        local prefix = (i == currentUnit) and "> " or "  "
+        love.graphics.print(prefix .. unit.type, 100, y)
+        love.graphics.print("Weapon: " .. unit.weapon.name, 250, y)
+        love.graphics.print("Addon: " .. unit.addon.name, 450, y)
     end
-    love.graphics.print("Press [SPACE] to start", 100, 250)
+
+    love.graphics.print("[Arrow keys] Change  [Tab] switch  [Space] Confirm", 100, 350)
 end
 
 function loadout.keypressed(key)
+    local army = player.getArmy()
+    local unit = army[currentUnit]
+
     if key == "up" then
-        selected = selected - 1
-        if selected < 1 then selected = #classes end
+        currentUnit = (currentUnit - 2) % #army + 1
     elseif key == "down" then
-        selected = selected + 1
-        if selected > #classes then selected = 1 end
+        currentUnit = (currentUnit) % #army + 1
+    elseif key == "tab" then
+        selecting = (selecting == "weapon") and "addon" or "weapon"
+    elseif key == "left" or key == "right" then
+        if selecting == "weapon" then
+            selectedWeapon = (key == "right") and selectedWeapon + 1 or selectedWeapon - 1
+            if selectedWeapon < 1 then selectedWeapon = #items.weapons end
+            if selectedWeapon > #items.weapons then selectedWeapon = 1 end
+            unit.weapon = items.weapons[selectedWeapon]
+        else
+            selectedAddon = (key == "right") and selectedAddon + 1 or selectedAddon - 1
+            if selectedAddon < 1 then selectedAddon = #items.addons end
+            if selectedAddon > #items.addons then selectedAddon = 1 end
+            unit.addon = items.addons[selectedAddon]
+        end
     elseif key == "space" then
-        -- zapisz wybraną klasę do globalnego stanu gracza
-        require("game.player").setClass(classes[selected])
-        require("game.state").setState("battle")
+        _G.setState("battle") -- zamiast require("game.state")
     end
 end
 
