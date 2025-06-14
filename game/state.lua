@@ -1,43 +1,71 @@
 local state = {}
-local current = "loadout"  -- możliwe: "loadout", "battle"
+local current = "menu"
 
+local menu = require("game.menu")
 local loadout = require("game.loadout")
 local battle = require("game.battle")
+local settings = require("game.settings")
+local endscreen = require("game.endscreen")
+
 
 function state.load()
+    menu.load()
+    settings.load()
     loadout.load()
     battle.load()
+    endscreen.load()
 end
 
 function state.update(dt)
-    if current == "loadout" then
+    if current == "menu" then
+        menu.update(dt)
+    elseif current == "settings" then
+        settings.update(dt)
+    elseif current == "loadout" then
         loadout.update(dt)
     elseif current == "battle" then
         battle.update(dt)
+    elseif current == "end" then
+        endscreen.update(dt)
     end
 end
 
 function state.draw()
-    if current == "loadout" then
+    if current == "menu" then
+        menu.draw()
+    elseif current == "settings" then
+        settings.draw()
+    elseif current == "loadout" then
         loadout.draw()
     elseif current == "battle" then
         battle.draw()
+    elseif current == "end" then
+        endscreen.draw()
     end
 end
 
 function state.keypressed(key)
-    if current == "loadout" then
+    if current == "menu" then
+        menu.keypressed(key)
+    elseif current == "settings" then
+        settings.keypressed(key)
+    elseif current == "loadout" then
         loadout.keypressed(key)
     elseif current == "battle" then
         if battle.keypressed then
             battle.keypressed(key)
         end
+    elseif current == "end" then
+        if endscreen.keypressed then
+            endscreen.keypressed(key)
+        end
     end
 end
-
 
 function state.setState(newState)
     current = newState
 end
+
+_G.setState = state.setState
 
 return state
