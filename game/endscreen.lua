@@ -1,5 +1,7 @@
 local endscreen = {}
 
+local player = require("game.player")
+
 local message = "Game Over"
 
 function endscreen.load()
@@ -18,7 +20,10 @@ function endscreen.draw()
 end
 
 function endscreen.keypressed(key)
-    if key == "space" or key == "return" then
+    if key == "space" then
+        player.clearArmy()
+        player.resetRound()
+        player.money = 0
         _G.setState("menu")
     end
 end

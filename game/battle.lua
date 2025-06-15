@@ -7,13 +7,14 @@ local enemyArmy = {}
 local selectedUnitIndex = 1
 local selectedTargetIndex = 1
 local turn = "player"
+local enemyTurnIndex = 1
 
 function battle.load()
     battle.generateEnemies()
 
     local army = player.getArmy()
     for i, unit in ipairs(army) do
-        local def = units.definitions[unit.type]
+        local def = require("game.units").definitions[unit.type]
         unit.hp = def.hp
         unit.x = 1
         unit.y = i
@@ -22,10 +23,20 @@ function battle.load()
     selectedUnitIndex = 1
     selectedTargetIndex = 1
     turn = "player"
+    enemyTurnIndex = 1
 end
 
 function battle.update(dt)
-    -- tury ręczne
+    if #enemyArmy == 0 then
+        player.addMoney(50 + player.getRound() * 10)
+        player.nextRound()
+        _G.setState("shop")
+        return
+    end
+
+    if turn == "enemy" then
+        battle.processEnemyTurn()
+    end
 end
 
 function battle.draw()
@@ -109,7 +120,7 @@ function battle.keypressed(key)
         end
 
         turn = "enemy"
-        battle.enemyTurn()
+        enemyTurnIndex = 1
     end
 end
 
@@ -117,47 +128,57 @@ function battle.generateEnemies()
     local r = player.getRound()
     enemyArmy = {}
     for i = 1, 3 do
-        local unit = units.create("Swordsman", 5, i)
-        unit.hp = unit.hp + (r - 1) * 2
+        local unit = units.create("Swordsman")
+        unit.hp = 5 + r * 2
+        unit.weapon = { damage = 2 + math.floor(r * 0.8) }
+        unit.x = 5
+        unit.y = i
         table.insert(enemyArmy, unit)
     end
 end
 
-
-function battle.enemyTurn()
+function battle.processEnemyTurn()
     local army = player.getArmy()
+    local enemy = enemyArmy[enemyTurnIndex]
 
-    for _, enemy in ipairs(enemyArmy) do
-        if #army == 0 then break end
-        local target = army[math.random(#army)]
+    if not enemy then
+        -- Wszyscy przeciwnicy wykonali ruch
+        turn = "player"
+        return
+    end
 
-        local weapon = enemy.weapon or { damage = 0 }
-        local addon = enemy.addon or {}
-        local bonus = 0
-        if addon.crit then bonus = bonus + 1 end
-        if addon.magic then bonus = bonus + 2 end
+    if #army == 0 then
+        endscreen.setMessage("Defeat!")
+        _G.setState("end")
+        return
+    end
 
-        local totalDamage = (weapon.damage or 0) + bonus
-        target.hp = target.hp - totalDamage
+    local target = army[math.random(#army)]
+    local weapon = enemy.weapon or { damage = 0 }
+    local addon = enemy.addon or {}
 
-        if target.hp <= 0 then
-            for i, u in ipairs(army) do
-                if u == target then
-                    table.remove(army, i)
-                    break
-                end
+    local bonus = 0
+    if addon.crit then bonus = bonus + 1 end
+    if addon.magic then bonus = bonus + 2 end
+
+    local totalDamage = (weapon.damage or 0) + bonus
+    target.hp = target.hp - totalDamage
+
+    if target.hp <= 0 then
+        for i, u in ipairs(army) do
+            if u == target then
+                table.remove(army, i)
+                break
             end
         end
     end
 
-    if #enemyArmy == 0 then
-        player.addMoney(50 + player.getRound() * 10)
-        player.nextRound()
-        _G.setState("shop")
-    elseif #army == 0 then
+    enemyTurnIndex = enemyTurnIndex + 1
+
+    if #army == 0 then
         endscreen.setMessage("Defeat!")
         _G.setState("end")
-    else
+    elseif enemyTurnIndex > #enemyArmy then
         turn = "player"
     end
 end

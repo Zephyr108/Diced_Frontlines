@@ -71,6 +71,13 @@ end
 
 function state.setState(newState)
     current = newState
+    if current == "battle" then
+        battle.load()
+    elseif current == "shop" then
+        shop.load()
+    elseif current == "end" then
+        endscreen.load()
+    end
 end
 
 _G.setState = state.setState
