@@ -28,13 +28,14 @@ end
 
 function battle.update(dt)
     if #enemyArmy == 0 then
-        player.addMoney(50 + player.getRound() * 10)
+        local reward = 50 + player.getRound() * 10
+        player.addMoney(reward)
+        player.lastReward = reward
         player.nextRound()
-        _G.setState("shop")
+        _G.setState("victory")
         return
     end
-
-    if turn == "enemy" then
+    if turn == "enemy" and enemyTurnIndex <= #enemyArmy then
         battle.processEnemyTurn()
     end
 end
@@ -120,39 +121,41 @@ function battle.keypressed(key)
         end
 
         turn = "enemy"
-        enemyTurnIndex = 1
     end
 end
 
 function battle.generateEnemies()
     local r = player.getRound()
     enemyArmy = {}
+
+    local enemyTypes = {
+        { type = "Swordsman", hp = 10, damage = 3 },
+        { type = "Archer", hp = 7, damage = 4 },
+        { type = "Brute", hp = 15, damage = 1 }
+    }
+
     for i = 1, 3 do
-        local unit = units.create("Swordsman")
-        unit.hp = 5 + r * 2
-        unit.weapon = { damage = 2 + math.floor(r * 0.8) }
-        unit.x = 5
-        unit.y = i
+        local t = enemyTypes[math.random(#enemyTypes)]
+        local unit = {
+            type = t.type,
+            hp = t.hp + r * 2,
+            weapon = { damage = t.damage + math.floor(r * 0.8) },
+            x = 5,
+            y = i
+        }
         table.insert(enemyArmy, unit)
     end
 end
 
 function battle.processEnemyTurn()
     local army = player.getArmy()
-    local enemy = enemyArmy[enemyTurnIndex]
-
-    if not enemy then
-        -- Wszyscy przeciwnicy wykonali ruch
-        turn = "player"
-        return
-    end
-
-    if #army == 0 then
+    if #enemyArmy == 0 or #army == 0 then
         endscreen.setMessage("Defeat!")
         _G.setState("end")
         return
     end
 
+    local enemy = enemyArmy[math.random(#enemyArmy)]
     local target = army[math.random(#army)]
     local weapon = enemy.weapon or { damage = 0 }
     local addon = enemy.addon or {}
@@ -173,12 +176,10 @@ function battle.processEnemyTurn()
         end
     end
 
-    enemyTurnIndex = enemyTurnIndex + 1
-
     if #army == 0 then
         endscreen.setMessage("Defeat!")
         _G.setState("end")
-    elseif enemyTurnIndex > #enemyArmy then
+    else
         turn = "player"
     end
 end

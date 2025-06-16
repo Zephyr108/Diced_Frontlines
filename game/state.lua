@@ -7,6 +7,7 @@ local battle = require("game.battle")
 local settings = require("game.settings")
 local endscreen = require("game.endscreen")
 local shop = require("game.shop")
+local victory = require("game.victory")
 
 function state.load()
     menu.load()
@@ -14,6 +15,7 @@ function state.load()
     loadout.load()
     battle.load()
     endscreen.load()
+    victory.load()
 end
 
 function state.update(dt)
@@ -29,7 +31,8 @@ function state.update(dt)
         endscreen.update(dt)
     elseif current == "shop" then
         shop.update(dt)
-
+    elseif current == "victory" then
+        victory.update(dt)
     end
 end
 
@@ -46,6 +49,8 @@ function state.draw()
         endscreen.draw()
     elseif current == "shop" then
         shop.draw()
+    elseif current == "victory" then
+        victory.draw()
     end
 end
 
@@ -66,6 +71,8 @@ function state.keypressed(key)
         end
     elseif current == "shop" then
         shop.keypressed(key)
+    elseif current == "victory" then
+        victory.keypressed(key)
     end
 end
 
@@ -77,6 +84,8 @@ function state.setState(newState)
         shop.load()
     elseif current == "end" then
         endscreen.load()
+    elseif current == "loadout" then
+        loadout.load()
     end
 end
 
