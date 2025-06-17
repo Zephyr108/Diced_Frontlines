@@ -1,13 +1,13 @@
 local state = {}
 local current = "menu"
 
-local menu = require("game.menu")
-local loadout = require("game.loadout")
-local battle = require("game.battle")
-local settings = require("game.settings")
-local endscreen = require("game.endscreen")
-local shop = require("game.shop")
-local victory = require("game.victory")
+local menu = require("game.screens.menu")
+local loadout = require("game.screens.loadout")
+local battle = require("game.screens.battle")
+local settings = require("game.core.settings")
+local endscreen = require("game.screens.endscreen")
+local shop = require("game.screens.shop")
+local victory = require("game.screens.victory")
 
 function state.load()
     menu.load()

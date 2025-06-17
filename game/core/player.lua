@@ -73,4 +73,29 @@ function player.resetRound()
     player.round = 1
 end
 
+local fallenUnits = {}
+
+function player.getFallen()
+    return fallenUnits
+end
+
+function player.addFallen(unit)
+    table.insert(fallenUnits, unit)
+end
+
+function player.revive(index)
+    local revived = table.remove(fallenUnits, index)
+    if revived then
+        revived.hp = require("game.data.units").definitions[revived.type].hp
+        local army = player.getArmy()
+        table.insert(army, revived)
+        return true
+    end
+    return false
+end
+
+function player.resetFallen()
+    fallenUnits = {}
+end
+
 return player

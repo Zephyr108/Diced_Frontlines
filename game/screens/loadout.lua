@@ -1,7 +1,7 @@
 local loadout = {}
 
-local items = require("game.items")
-local player = require("game.player")
+local items = require("game.data.items")
+local player = require("game.core.player")
 
 local currentUnit = 1
 local selecting = "weapon" -- lub "addon"

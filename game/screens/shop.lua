@@ -1,6 +1,7 @@
 local shop = {}
-local items = require("game.items")
-local player = require("game.player")
+local items = require("game.data.items")
+local player = require("game.core.player")
+local units = require("game.data.units")
 
 local selectedItem = 1
 local selectedUnit = 1
@@ -28,6 +29,13 @@ function shop.draw()
         local prefix = (i == selectedItem) and "> " or "  "
         love.graphics.print(prefix .. item.name .. " | Cost: " .. (item.cost or 20), 100, y)
     end
+
+    love.graphics.print("Revive fallen units:", 500, 50)
+    local fallen = player.getFallen()
+    for i, f in ipairs(fallen) do
+        love.graphics.print(i .. ". " .. f.type .. " (revive: 50g)", 500, 50 + i * 20)
+    end
+    love.graphics.print("[R] Revive selected fallen", 500, 150)
 
     love.graphics.print("[↑↓] Select item   [Tab] Switch type", 100, 400)
     love.graphics.print("[ [ ] ] Select unit   [Space] Buy   [Enter] Next round", 100, 420)
@@ -66,6 +74,13 @@ function shop.keypressed(key)
                 end
             end
         end
+
+    elseif key == "r" then
+        local fallen = player.getFallen()
+        if #fallen > 0 and player.spendMoney(50) then
+            player.revive(1)
+        end
+    
     elseif key == "return" then
         _G.setState("battle")
     elseif key == "escape" then

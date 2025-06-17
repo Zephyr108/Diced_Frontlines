@@ -1,5 +1,5 @@
 local victory = {}
-local player = require("game.player")
+local player = require("game.core.player")
 
 function victory.load() end
 function victory.update(dt) end

@@ -1,6 +1,8 @@
-local state = require("game.state")
+local state = require("game.core.state")
 
 function love.load()
+    local icon = love.image.newImageData("assets/gfx/icon.png")
+    love.window.setIcon(icon)
     state.load()
 end
 

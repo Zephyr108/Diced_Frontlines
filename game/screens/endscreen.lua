@@ -1,6 +1,6 @@
 local endscreen = {}
 
-local player = require("game.player")
+local player = require("game.core.player")
 
 local message = "Game Over"
 
