@@ -10,6 +10,7 @@ local selectedAddon = 1
 
 function loadout.load()
     player.clearArmy()
+    player.resetFallen()
     for i = 1, 3 do
         player.addUnit({
             type = "Swordsman", -- domyślna

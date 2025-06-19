@@ -76,6 +76,12 @@ function state.keypressed(key)
     end
 end
 
+function love.keyreleased(key)
+    if current.keyreleased then
+        current.keyreleased(key)
+    end
+end
+
 function state.setState(newState)
     current = newState
     if current == "battle" then
