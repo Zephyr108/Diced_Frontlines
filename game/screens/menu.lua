@@ -10,7 +10,7 @@ function menu.update(dt)
 end
 
 function menu.draw()
-    love.graphics.print("Forged Frontlines", 100, 50)
+    love.graphics.print("Diced Frontlines", 100, 50)
     for i, option in ipairs(options) do
         local prefix = (i == selected) and "> " or "  "
         love.graphics.print(prefix .. option, 100, 100 + i * 30)

@@ -1,101 +1,89 @@
-local player = {
-    class = "None",
-    army = {}
-}
+local player = {}
 
-function player.getClass()
-    return player.class
-end
-
-function player.setClass(className)
-    player.class = className
-    player.generateNewArmy()
-end
-
-function player.generateNewArmy()
-    local units = require("game.units")
-    player.army = {}
-
-    if player.class == "Blacksmith" then
-        table.insert(player.army, units.create("Swordsman", 1, 1))
-        table.insert(player.army, units.create("Swordsman", 1, 2))
-        table.insert(player.army, units.create("Swordsman", 1, 3))
-    elseif player.class == "Gunsmith" then
-        table.insert(player.army, units.create("Gunner", 1, 1))
-        table.insert(player.army, units.create("Gunner", 1, 2))
-        table.insert(player.army, units.create("Gunner", 1, 3))
-    end
-end
-
-
-function player.getArmy()
-    return player.army
-end
+local army = {}
+local money = 100
+local round = 1
+local lastReward = 0
+local fallen = {}
+local selectedClass = "blacksmith" -- domyślnie
 
 function player.addUnit(unit)
-    table.insert(player.army, unit)
+    table.insert(army, unit)
+end
+
+function player.getArmy()
+    return army
 end
 
 function player.clearArmy()
-    player.army = {}
+    army = {}
 end
 
-player.money = 0
-
 function player.getMoney()
-    return player.money
+    return money
 end
 
 function player.addMoney(amount)
-    player.money = player.money + amount
+    money = money + amount
 end
 
 function player.spendMoney(amount)
-    if player.money >= amount then
-        player.money = player.money - amount
-        return true
-    else
-        return false
-    end
-end
-
-player.round = 1
-
-function player.getRound()
-    return player.round
-end
-
-function player.nextRound()
-    player.round = player.round + 1
-end
-
-function player.resetRound()
-    player.round = 1
-end
-
-local fallenUnits = {}
-
-function player.getFallen()
-    return fallenUnits
-end
-
-function player.addFallen(unit)
-    table.insert(fallenUnits, unit)
-end
-
-function player.revive(index)
-    local revived = table.remove(fallenUnits, index)
-    if revived then
-        revived.hp = require("game.data.units").definitions[revived.type].hp
-        local army = player.getArmy()
-        table.insert(army, revived)
+    if money >= amount then
+        money = money - amount
         return true
     end
     return false
 end
 
+function player.getRound()
+    return round
+end
+
+function player.nextRound()
+    round = round + 1
+end
+
+function player.setLastReward(r)
+    lastReward = r
+end
+
+function player.getLastReward()
+    return lastReward
+end
+
+function player.addFallen(unit)
+    table.insert(fallen, unit)
+end
+
+function player.getFallen()
+    return fallen
+end
+
 function player.resetFallen()
-    fallenUnits = {}
+    fallen = {}
+end
+
+function player.revive(index)
+    local unit = table.remove(fallen, index)
+    if unit then
+        unit.hp = 10 -- przykładowe bazowe HP przy wskrzeszeniu
+        table.insert(army, unit)
+    end
+end
+
+-- NOWE: Klasa gracza i dostęp do kostki
+
+function player.setClass(classId)
+    selectedClass = classId
+end
+
+function player.getClass()
+    return selectedClass
+end
+
+function player.getDie()
+    local dice = require("game.data.dice")
+    return dice[selectedClass] or dice.blacksmith
 end
 
 return player
