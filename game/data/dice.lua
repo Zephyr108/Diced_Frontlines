@@ -24,4 +24,16 @@ dice.alchemist = {
     roll = function(self) return roll(self) end
 }
 
+function dice.getDiceForClass(class)
+    if class == "Blacksmith" then
+        return dice.blacksmith
+    elseif class == "Gunsmith" then
+        return dice.gunsmith
+    elseif class == "Alchemist" then
+        return dice.alchemist
+    else
+        return dice.blacksmith -- domyślnie
+    end
+end
+
 return dice

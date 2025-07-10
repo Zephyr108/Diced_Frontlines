@@ -1,176 +1,163 @@
-local battle = {}
 local player = require("game.core.player")
-local enemiesData = require("game.data.enemies")
+local enemies = require("game.data.enemies")
 local weapons = require("game.data.weapons")
+local dice = require("game.data.dice")
+local roller = require("game.ui.roller")
 
-local activeUnit = 1
-local targetEnemy = 1
-local enemies = {}
-local log = {}
+local battle = {}
 
-local isPlayerTurn = true
+local playerUnits = {}
+local enemyUnits = {}
+local selectedPlayerUnit = 1
+local selectedEnemyUnit = 1
+local turn = "player"
+local logs = {}
 
-local function logMessage(msg)
-    table.insert(log, msg)
-    if #log > 6 then
-        table.remove(log, 1)
+local function log(text)
+    table.insert(logs, text)
+    if #logs > 10 then
+        table.remove(logs, 1)
     end
 end
 
-local function generateEnemies()
-    enemies = {}
-    local enemyTypes = enemiesData.normal
+local function rollAttack(attacker, defender, attackerType)
+    local die = dice.getDiceForClass(attacker.class or "Default")
+    local result = die:roll()
+
+    -- zapisz rzut do UI
+    roller.setRoll(attackerType, result)
+
+    local damage = 0
+    if result == "MISS" then
+        log((attackerType and "Player" or "Enemy") .. " missed!")
+        return
+    elseif result == "CRIT" then
+        damage = (attacker.weapon and attacker.weapon.damage or 1) * 2
+        log((attackerType and "Player" or "Enemy") .. " landed a CRITICAL HIT!")
+    else
+        damage = (attacker.weapon and attacker.weapon.damage or 1) + tonumber(result)
+    end
+
+    defender.hp = defender.hp - damage
+    log((attackerType and "Player" or "Enemy") .. " dealt " .. damage .. " damage to " .. (defender.class or "enemy") .. "!")
+end
+
+
+local function nextTurn()
+    if turn == "player" then
+        turn = "enemy"
+    else
+        turn = "player"
+    end
+end
+
+local function isTeamAlive(team)
+    for _, unit in ipairs(team) do
+        if unit.hp > 0 then return true end
+    end
+    return false
+end
+
+local function getFirstAlive(team)
+    for i, unit in ipairs(team) do
+        if unit.hp > 0 then return i end
+    end
+    return nil
+end
+
+function battle.load()
+    logs = {}
+    roller.clear()
+
+    local class = player.getClass()
+    playerUnits = {}
+    for _, unit in ipairs(player.getArmy()) do
+        table.insert(playerUnits, {
+            class = class,
+            hp = unit.hp,
+            weapon = unit.weapon,
+            addon = unit.addon,
+        })
+    end
+
+    enemyUnits = {}
     for i = 1, 3 do
         local keys = {}
-        for k in pairs(enemyTypes) do table.insert(keys, k) end
-        local etype = keys[math.random(#keys)]
-        local def = enemyTypes[etype]
-        table.insert(enemies, {
-            type = def.type,
+        for k in pairs(enemies.normal) do table.insert(keys, k) end
+        local name = keys[math.random(#keys)]
+        local def = enemies.normal[name]
+        table.insert(enemyUnits, {
+            class = name,
             hp = def.baseHp,
             weapon = weapons[def.weapon]
         })
     end
-end
 
-local function performAttack(attacker, target)
-    local die = player.getDie()
-    local result = die:roll()
-    local dmg = attacker.weapon.damage or 1
-
-    if result == "miss" then
-        logMessage(attacker.type .. " missed!")
-    elseif result == "block" then
-        logMessage(target.type .. " blocked!")
-    elseif result == "crit" then
-        target.hp = target.hp - dmg * 2
-        logMessage(attacker.type .. " landed a CRIT for " .. (dmg * 2) .. "!")
-    elseif result == "hit" then
-        target.hp = target.hp - dmg
-        logMessage(attacker.type .. " hit for " .. dmg .. " damage.")
-    elseif result == "special" then
-        target.hp = target.hp - dmg * 3
-        logMessage(attacker.type .. " used SPECIAL! " .. (dmg * 3) .. " dmg!")
-    end
-end
-
-function battle.load()
-    activeUnit = 1
-    targetEnemy = 1
-    isPlayerTurn = true
-    log = {}
-
-    generateEnemies()
+    selectedPlayerUnit = getFirstAlive(playerUnits) or 1
+    selectedEnemyUnit = getFirstAlive(enemyUnits) or 1
+    turn = "player"
 end
 
 function battle.update(dt)
-    -- nic tu nie ma
+    roller.update(dt)
 end
 
 function battle.draw()
-    love.graphics.print("BATTLE", 20, 20)
+    love.graphics.print("Battle Phase - Turn: " .. turn, 50, 20)
 
-    -- Player Army
-    local army = player.getArmy()
-    for i, unit in ipairs(army) do
+    for i, unit in ipairs(playerUnits) do
         local y = 60 + i * 40
-        local prefix = (i == activeUnit) and "> " or "  "
-        love.graphics.print(prefix .. unit.type .. " HP: " .. unit.hp, 20, y)
+        local prefix = (i == selectedPlayerUnit and turn == "player") and "> " or "  "
+        love.graphics.print(prefix .. unit.class .. " HP: " .. unit.hp, 50, y)
     end
 
-    -- Enemies
-    for i, e in ipairs(enemies) do
+    for i, unit in ipairs(enemyUnits) do
         local y = 60 + i * 40
-        local prefix = (i == targetEnemy) and "> " or "  "
-        love.graphics.print(prefix .. e.type .. " HP: " .. e.hp, 300, y)
+        local prefix = (i == selectedEnemyUnit and turn == "enemy") and "> " or "  "
+        love.graphics.print(prefix .. unit.class .. " HP: " .. unit.hp, 400, y)
     end
 
-    -- Log
-    for i, msg in ipairs(log) do
-        love.graphics.print(msg, 20, 250 + i * 20)
+    love.graphics.print("Logs:", 50, 300)
+    for i, msg in ipairs(logs) do
+        love.graphics.print(msg, 50, 320 + i * 15)
     end
 
-    love.graphics.print("Turn: " .. (isPlayerTurn and "Player" or "Enemy"), 20, 230)
-    love.graphics.print("[↑↓] Select unit [←→] Select enemy [Space] Attack", 20, 400)
+    roller.draw()
 end
 
 function battle.keypressed(key)
-    local army = player.getArmy()
-
-    if isPlayerTurn then
+    if turn == "player" then
         if key == "up" then
-            activeUnit = (activeUnit - 2) % #army + 1
+            selectedPlayerUnit = (selectedPlayerUnit - 2) % #playerUnits + 1
         elseif key == "down" then
-            activeUnit = (activeUnit) % #army + 1
+            selectedPlayerUnit = (selectedPlayerUnit) % #playerUnits + 1
         elseif key == "left" then
-            targetEnemy = (targetEnemy - 2) % #enemies + 1
+            selectedEnemyUnit = (selectedEnemyUnit - 2) % #enemyUnits + 1
         elseif key == "right" then
-            targetEnemy = (targetEnemy) % #enemies + 1
+            selectedEnemyUnit = (selectedEnemyUnit) % #enemyUnits + 1
         elseif key == "space" then
-            local attacker = army[activeUnit]
-            local target = enemies[targetEnemy]
-            if attacker and target and attacker.hp > 0 and target.hp > 0 then
-                performAttack(attacker, target)
-                if target.hp <= 0 then
-                    logMessage(target.type .. " has been defeated!")
+            local attacker = playerUnits[selectedPlayerUnit]
+            local defender = enemyUnits[selectedEnemyUnit]
+            if attacker.hp > 0 and defender.hp > 0 then
+                rollAttack(attacker, defender, true)
+                if not isTeamAlive(enemyUnits) then
+                    _G.setState("victory")
+                    return
                 end
-                isPlayerTurn = false
+                nextTurn()
             end
         end
-    else
-        -- Enemy Turn (one enemy attacks)
-        for _, enemy in ipairs(enemies) do
-            if enemy.hp > 0 then
-                local target = nil
-                for _, u in ipairs(army) do
-                    if u.hp > 0 then
-                        target = u
-                        break
-                    end
-                end
-                if target then
-                    performAttack(enemy, target)
-                    if target.hp <= 0 then
-                        logMessage(target.type .. " has fallen!")
-                        player.addFallen(target)
-                    end
-                end
-                break
+    elseif turn == "enemy" then
+        local ai = enemyUnits[selectedEnemyUnit]
+        local targetIndex = getFirstAlive(playerUnits)
+        if ai and targetIndex then
+            local target = playerUnits[targetIndex]
+            rollAttack(ai, target, false)
+            if not isTeamAlive(playerUnits) then
+                _G.setState("defeat")
+                return
             end
-        end
-        isPlayerTurn = true
-    end
-
-    -- Check end of battle
-    local allEnemiesDead = true
-    for _, e in ipairs(enemies) do
-        if e.hp > 0 then
-            allEnemiesDead = false
-            break
-        end
-    end
-
-    local allAlliesDead = true
-    for _, u in ipairs(army) do
-        if u.hp > 0 then
-            allAlliesDead = false
-            break
-        end
-    end
-
-    if allEnemiesDead then
-        logMessage("Victory! Press Enter...")
-    elseif allAlliesDead then
-        logMessage("Defeat! Press Enter...")
-    end
-
-    if key == "return" then
-        if allEnemiesDead then
-            player.addMoney(50)
-            player.nextRound()
-            _G.setState("shop")
-        elseif allAlliesDead then
-            _G.setState("endscreen")
+            nextTurn()
         end
     end
 end
