@@ -1,19 +1,46 @@
-local state = require("game.core.state")
+local Save = require("game.core.save")
+Save.loadSettings()
+Save.applySettings()
+
+local Screen = require('game.screens.menu')
+_G.Game = {
+  state = 'menu',
+  screen = nil,
+  log = {},
+  gold = 0,
+  fightCount = 0,
+  font = nil,
+  bigFont = nil,
+}
+
+function Game:pushLog(msg)
+  table.insert(self.log, 1, msg)
+  if #self.log>14 then table.remove(self.log) end
+end
 
 function love.load()
-    local icon = love.image.newImageData("assets/gfx/icon.png")
-    love.window.setIcon(icon)
-    state.load()
+  love.window.setTitle('Diced Frontlines')
+  -- Load a font with full Latin support for clean diacritics if needed later
+  local function tryFont(path, size) if love.filesystem.getInfo(path) then return love.graphics.newFont(path, size) end end
+  Game.font    = tryFont('assets/fonts/NotoSans-Regular.ttf', 16)
+              or tryFont('assets/fonts/DejaVuSans.ttf', 16)
+              or love.graphics.newFont(16)
+  Game.bigFont = tryFont('assets/fonts/NotoSans-Regular.ttf', 56)
+              or tryFont('assets/fonts/DejaVuSans.ttf', 56)
+              or love.graphics.newFont(56)
+  love.graphics.setFont(Game.font)
+  Game.screen = require('game.screens.menu')
+  Game.screen.enter()
 end
 
 function love.update(dt)
-    state.update(dt)
+  if Game.screen and Game.screen.update then Game.screen.update(dt) end
 end
 
 function love.draw()
-    state.draw()
+  if Game.screen and Game.screen.draw then Game.screen.draw() end
 end
 
 function love.keypressed(key)
-    state.keypressed(key)
+  if Game.screen and Game.screen.keypressed then Game.screen.keypressed(key) end
 end

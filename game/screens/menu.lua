@@ -1,41 +1,68 @@
-local menu = {}
+local Player  = require("game.core.player")
+local Classes = require("game.data.classes")
+local Save    = require("game.core.save")
 
-local options = { "New Game", "Continue", "Settings", "Quit" }
-local selected = 1
+local M = {}
+local entries = { "New Game", "Continue", "Settings", "Quit" }
+local idx = 1
 
-function menu.load()
+local function hasContinue()
+  return Save.hasSave()
 end
 
-function menu.update(dt)
+function M.enter()
+  Game.state = "menu"
+  idx = 1
 end
 
-function menu.draw()
-    love.graphics.print("Diced Frontlines", 100, 50)
-    for i, option in ipairs(options) do
-        local prefix = (i == selected) and "> " or "  "
-        love.graphics.print(prefix .. option, 100, 100 + i * 30)
+function M.update(_) end
+
+function M.draw()
+  local W, H = love.graphics.getWidth(), love.graphics.getHeight()
+  love.graphics.clear(0.08, 0.09, 0.12)
+  love.graphics.setColor(1,1,1)
+  love.graphics.printf("DICED FRONTLINES", 0, 40, W, "center", 0, 1.6)
+  love.graphics.printf("Use arrows up/down and Enter", 0, 90, W, "center")
+
+  for i, label in ipairs(entries) do
+    local disabled = (label == "Continue" and not hasContinue())
+    local y = 140 + (i-1)*36
+    if i == idx then love.graphics.rectangle("line", W/2-160, y-4, 320, 28) end
+    love.graphics.setColor(disabled and 0.6 or 1, disabled and 0.6 or 1, disabled and 0.6 or 1)
+    love.graphics.printf(label, 0, y, W, "center")
+    love.graphics.setColor(1,1,1)
+  end
+end
+
+local function startNewGame()
+  Game.screen = require("game.screens.classselect")
+  Game.screen.enter()
+end
+
+function M.keypressed(key)
+  if key == "up" then
+    idx = (idx-2) % #entries + 1
+  elseif key == "down" then
+    idx = (idx) % #entries + 1
+  elseif key == "return" or key == "kpenter" then
+    local choice = entries[idx]
+    if choice == "New Game" then
+      startNewGame()
+    elseif choice == "Continue" then
+      if hasContinue() then
+        Save.loadGame()
+        Game.screen = require("game.screens.battle")
+        Game.screen.enter()
+      end
+    elseif choice == "Settings" then
+      Game.screen = require("game.screens.settings")
+      Game.screen.enter()
+    elseif choice == "Quit" then
+      love.event.quit()
     end
+  elseif key == "escape" then
+    love.event.quit()
+  end
 end
 
-function menu.keypressed(key)
-    if key == "up" then
-        selected = selected - 1
-        if selected < 1 then selected = #options end
-    elseif key == "down" then
-        selected = selected + 1
-        if selected > #options then selected = 1 end
-    elseif key == "return" or key == "space" then
-        local choice = options[selected]
-        if choice == "New Game" then
-            _G.setState("loadout")
-        elseif choice == "Continue" then
-            -- jeszcze nie zaimplementowane
-        elseif choice == "Settings" then
-            _G.setState("settings")
-        elseif choice == "Quit" then
-            love.event.quit()
-        end
-    end
-end
-
-return menu
+return M
