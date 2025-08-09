@@ -1,6 +1,8 @@
 local Shop = require('game.core.items')
 local M = {}
-function M.enter() Game.state='shop'; Shop.rollShop(); Game:pushLog('\n— SHOP — Choose [1-9], [Space] to continue') end
+function M.enter() Game.state='shop'; Shop.rollShop(); 
+  Game:pushLog('— SHOP — Choose [1-9], [Space] to continue') 
+end
 function M.update(_) end
 function M.draw()
   local W,H = love.graphics.getWidth(), love.graphics.getHeight()

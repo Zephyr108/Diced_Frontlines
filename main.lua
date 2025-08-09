@@ -14,8 +14,16 @@ _G.Game = {
 }
 
 function Game:pushLog(msg)
-  table.insert(self.log, 1, msg)
-  if #self.log>14 then table.remove(self.log) end
+  local text = tostring(msg):gsub("^\n+", "")
+
+  for line in text:gmatch("([^\n]+)") do
+    table.insert(self.log, line)
+  end
+
+  local CAP = 500
+  while #self.log > CAP do
+    table.remove(self.log, 1)
+  end
 end
 
 function love.load()

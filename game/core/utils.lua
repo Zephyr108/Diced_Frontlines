@@ -3,4 +3,3 @@ function M.deepcopy(t) if type(t)~='table' then return t end local r={} for k,v 
 function M.clamp(x,a,b) if x<a then return a elseif x>b then return b else return x end end
 function M.choice(list) return list[love.math.random(1,#list)] end
 return M
-
